@@ -3,9 +3,17 @@ import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const MyApp());
+  // هذا السطر مهم جداً: يتحقق إذا التطبيق يشتغل كشاشة عائمة أو تطبيق عادي
+  if (FlutterOverlayWindow.isActive()) {
+    runApp(const OverlayApp());
+  } else {
+    runApp(const MyApp());
+  }
 }
 
+// ==========================================
+// التطبيق الأساسي
+// ==========================================
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
@@ -86,8 +94,20 @@ class _MainScreenState extends State<MainScreen> {
 }
 
 // ==========================================
-// الشاشة العائمة (Overlay)
+// تطبيق الشاشة العائمة (Overlay)
 // ==========================================
+class OverlayApp extends StatelessWidget {
+  const OverlayApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: OverlayWidget(),
+    );
+  }
+}
+
 class OverlayWidget extends StatefulWidget {
   const OverlayWidget({super.key});
 
@@ -100,7 +120,6 @@ class _OverlayWidgetState extends State<OverlayWidget> {
   bool _isWhite = true;
   bool _isAnalyzing = false;
   
-  // إحداثيات المربعات (القطعة والمكان)
   Rect _pieceSquare = Rect.zero;
   Rect _targetSquare = Rect.zero;
   bool _showHighlights = false;
@@ -112,18 +131,16 @@ class _OverlayWidgetState extends State<OverlayWidget> {
       _isAnalyzing = true;
     });
 
-    // محاكاة قراءة الشاشة والتحليل (تستغرق ثانيتين)
     Future.delayed(const Duration(seconds: 2), () {
-      setState(() {
-        _isAnalyzing = false;
-        _showHighlights = true;
-        
-        // إحداثيات وهمية لتلوين مربعين (مثلاً e2 و e4)
-        // في التطبيق الحقيقي، هذه الإحداثيات تُحسب بناءً على صورة الشاشة
-        double squareSize = 50.0; // حجم المربع الواحد
-        _pieceSquare = Rect.fromLTWH(200, 500, squareSize, squareSize);
-        _targetSquare = Rect.fromLTWH(200, 300, squareSize, squareSize);
-      });
+      if (mounted) {
+        setState(() {
+          _isAnalyzing = false;
+          _showHighlights = true;
+          double squareSize = 50.0;
+          _pieceSquare = Rect.fromLTWH(200, 500, squareSize, squareSize);
+          _targetSquare = Rect.fromLTWH(200, 300, squareSize, squareSize);
+        });
+      }
     });
   }
 
@@ -133,7 +150,6 @@ class _OverlayWidgetState extends State<OverlayWidget> {
       color: Colors.transparent,
       child: Stack(
         children: [
-          // 1. طبقة تلوين المربعات
           if (_showHighlights)
             Positioned.fill(
               child: CustomPaint(
@@ -144,7 +160,6 @@ class _OverlayWidgetState extends State<OverlayWidget> {
               ),
             ),
 
-          // 2. واجهة اختيار اللون
           if (!_colorSelected)
             Center(
               child: Container(
@@ -180,13 +195,12 @@ class _OverlayWidgetState extends State<OverlayWidget> {
               ),
             ),
 
-          // 3. مؤشر التحميل
           if (_isAnalyzing)
-            const Center(
+            Center( // تم إزالة const من هنا لحل المشكلة
               child: Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.all(Radius.circular(15))),
-                child: Column(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(15)),
+                child: const Column( // تم وضع const هنا
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CircularProgressIndicator(color: Colors.greenAccent),
@@ -197,7 +211,6 @@ class _OverlayWidgetState extends State<OverlayWidget> {
               ),
             ),
 
-          // 4. زر الإغلاق
           Positioned(
             top: 50,
             right: 20,
@@ -212,9 +225,6 @@ class _OverlayWidgetState extends State<OverlayWidget> {
   }
 }
 
-// ==========================================
-// كلاس تلوين المربعات (Square Highlighter)
-// ==========================================
 class SquareHighlighter extends CustomPainter {
   final Rect pieceSquare;
   final Rect targetSquare;
@@ -223,27 +233,12 @@ class SquareHighlighter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // لون القطعة اللي راح تتحرك (أزرق شفاف)
-    final piecePaint = Paint()
-      ..color = Colors.blueAccent.withOpacity(0.6)
-      ..style = PaintingStyle.fill;
+    final piecePaint = Paint()..color = Colors.blueAccent.withOpacity(0.6)..style = PaintingStyle.fill;
+    final targetPaint = Paint()..color = Colors.greenAccent.withOpacity(0.6)..style = PaintingStyle.fill;
+    final borderPaint = Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 3.0;
 
-    // لون المكان اللي راح تروحله (أخضر شفاف)
-    final targetPaint = Paint()
-      ..color = Colors.greenAccent.withOpacity(0.6)
-      ..style = PaintingStyle.fill;
-
-    // لون الإطار
-    final borderPaint = Paint()
-      ..color = Colors.white
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0;
-
-    // رسم مربع القطعة
     canvas.drawRect(pieceSquare, piecePaint);
     canvas.drawRect(pieceSquare, borderPaint);
-
-    // رسم مربع الهدف
     canvas.drawRect(targetSquare, targetPaint);
     canvas.drawRect(targetSquare, borderPaint);
   }
