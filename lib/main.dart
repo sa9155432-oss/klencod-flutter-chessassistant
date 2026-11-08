@@ -12,7 +12,7 @@ Future<void> main() async {
 }
 
 // ==========================================
-// التطبيق الأساسي
+// التطبيق الأساسي (اللي بيه زر التشغيل)
 // ==========================================
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -46,6 +46,7 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
 
+    // فتح الشاشة العائمة بحجم كبير وشفاف عشان نرسم فوق الرقعة
     await FlutterOverlayWindow.showOverlay(
       enableDrag: false,
       height: WindowSize.matchParent,
@@ -60,7 +61,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('AR Chess Assistant'), centerTitle: true),
+      appBar: AppBar(title: const Text('Chess AR'), centerTitle: true),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -99,10 +100,10 @@ class OverlayApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      color: Colors.transparent, // ضروري جداً عشان الشاشة تكون شفافة
-      home: const OverlayWidget(),
+      color: Colors.transparent,
+      home: OverlayWidget(),
     );
   }
 }
@@ -118,10 +119,7 @@ class _OverlayWidgetState extends State<OverlayWidget> {
   bool _colorSelected = false;
   bool _isWhite = true;
   bool _isAnalyzing = false;
-  
-  Rect _pieceSquare = Rect.zero;
-  Rect _targetSquare = Rect.zero;
-  bool _showHighlights = false;
+  String _bestMoveText = "جاري التحليل...";
 
   void _selectColor(bool isWhite) {
     setState(() {
@@ -130,14 +128,13 @@ class _OverlayWidgetState extends State<OverlayWidget> {
       _isAnalyzing = true;
     });
 
+    // هنا نحاكي قراءة الشاشة والحساب (ثانيتين)
     Future.delayed(const Duration(seconds: 2), () {
       if (mounted) {
         setState(() {
           _isAnalyzing = false;
-          _showHighlights = true;
-          double squareSize = 50.0;
-          _pieceSquare = Rect.fromLTWH(200, 500, squareSize, squareSize);
-          _targetSquare = Rect.fromLTWH(200, 300, squareSize, squareSize);
+          // هنا راح يطبع الحركة، مثلاً e2-e4
+          _bestMoveText = "الحركة: e2-e4"; 
         });
       }
     });
@@ -149,29 +146,20 @@ class _OverlayWidgetState extends State<OverlayWidget> {
       color: Colors.transparent,
       child: Stack(
         children: [
-          if (_showHighlights)
-            Positioned.fill(
-              child: CustomPaint(
-                painter: SquareHighlighter(
-                  pieceSquare: _pieceSquare,
-                  targetSquare: _targetSquare,
-                ),
-              ),
-            ),
-
+          // 1. القائمة الصغيرة اللي تختار منها اللون
           if (!_colorSelected)
             Center(
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.95),
+                  color: const Color(0xFF1E293B),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.blueAccent, width: 2),
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text("اختر لونك للبدء", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
+                    const Text("اختر لونك", style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white)),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisSize: MainAxisSize.min,
@@ -194,54 +182,49 @@ class _OverlayWidgetState extends State<OverlayWidget> {
               ),
             ),
 
-          if (_isAnalyzing)
+          // 2. شاشة عرض الحركة الأفضل
+          if (_colorSelected)
             Center(
               child: Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(15)),
-                child: const Column(
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 20),
+                decoration: BoxDecoration(
+                  color: Colors.black87,
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(color: Colors.greenAccent, width: 2),
+                ),
+                child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(color: Colors.greenAccent),
-                    SizedBox(height: 15),
-                    Text("جاري قراءة الرقعة...", style: TextStyle(color: Colors.white, fontSize: 16)),
+                    if (_isAnalyzing)
+                      const CircularProgressIndicator(color: Colors.greenAccent)
+                    else
+                      Text(
+                        _bestMoveText,
+                        style: const TextStyle(fontSize: 30, fontWeight: FontWeight.bold, color: Colors.greenAccent),
+                      ),
+                    const SizedBox(height: 15),
+                    Text(
+                      _isAnalyzing ? "جاري قراءة الرقعة..." : "أفضل حركة",
+                      style: const TextStyle(color: Colors.white, fontSize: 16),
+                    )
                   ],
                 ),
               ),
             ),
 
+          // 3. زر الإغلاق (فوق على اليمين)
           Positioned(
             top: 50,
             right: 20,
-            child: IconButton(
-              icon: const Icon(Icons.close, color: Colors.red, size: 30),
+            child: FloatingActionButton(
+              mini: true,
+              backgroundColor: Colors.red,
               onPressed: () => FlutterOverlayWindow.closeOverlay(),
+              child: const Icon(Icons.close, color: Colors.white),
             ),
           )
         ],
       ),
     );
   }
-}
-
-class SquareHighlighter extends CustomPainter {
-  final Rect pieceSquare;
-  final Rect targetSquare;
-
-  SquareHighlighter({required this.pieceSquare, required this.targetSquare});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final piecePaint = Paint()..color = Colors.blueAccent.withOpacity(0.6)..style = PaintingStyle.fill;
-    final targetPaint = Paint()..color = Colors.greenAccent.withOpacity(0.6)..style = PaintingStyle.fill;
-    final borderPaint = Paint()..color = Colors.white..style = PaintingStyle.stroke..strokeWidth = 3.0;
-
-    canvas.drawRect(pieceSquare, piecePaint);
-    canvas.drawRect(pieceSquare, borderPaint);
-    canvas.drawRect(targetSquare, targetPaint);
-    canvas.drawRect(targetSquare, borderPaint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
 }
