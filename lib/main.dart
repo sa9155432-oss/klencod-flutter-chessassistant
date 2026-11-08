@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
-void main() {
+// 1. تغيير الدالة إلى async عشان نستخدم await
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // هذا السطر مهم جداً: يتحقق إذا التطبيق يشتغل كشاشة عائمة أو تطبيق عادي
-  if (FlutterOverlayWindow.isActive()) {
+  
+  // 2. إضافة await هنا لأن الدالة ترجع Future
+  if (await FlutterOverlayWindow.isActive()) {
     runApp(const OverlayApp());
   } else {
     runApp(const MyApp());
@@ -46,12 +48,11 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
 
+    // 3. تم إزالة overlayFlags و position لأنها محذوفة من النسخة الجديدة
     await FlutterOverlayWindow.showOverlay(
       enableDrag: false,
-      overlayFlags: OverlayWindowFlags.none,
       height: WindowSize.matchParent,
       width: WindowSize.matchParent,
-      position: OverlayPosition.fullScreen,
     );
 
     setState(() {
@@ -196,11 +197,11 @@ class _OverlayWidgetState extends State<OverlayWidget> {
             ),
 
           if (_isAnalyzing)
-            Center( // تم إزالة const من هنا لحل المشكلة
+            Center(
               child: Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(color: Colors.black87, borderRadius: BorderRadius.circular(15)),
-                child: const Column( // تم وضع const هنا
+                child: const Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     CircularProgressIndicator(color: Colors.greenAccent),
