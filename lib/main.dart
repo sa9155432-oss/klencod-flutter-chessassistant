@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_overlay_window/flutter_overlay_window.dart';
 
-// 1. تغيير الدالة إلى async عشان نستخدم await
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  // 2. إضافة await هنا لأن الدالة ترجع Future
   if (await FlutterOverlayWindow.isActive()) {
     runApp(const OverlayApp());
   } else {
@@ -48,7 +46,6 @@ class _MainScreenState extends State<MainScreen> {
       return;
     }
 
-    // 3. تم إزالة overlayFlags و position لأنها محذوفة من النسخة الجديدة
     await FlutterOverlayWindow.showOverlay(
       enableDrag: false,
       height: WindowSize.matchParent,
@@ -102,9 +99,10 @@ class OverlayApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: OverlayWidget(),
+      color: Colors.transparent, // ضروري جداً عشان الشاشة تكون شفافة
+      home: const OverlayWidget(),
     );
   }
 }

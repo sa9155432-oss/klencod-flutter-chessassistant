@@ -1,12 +1,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/> <!-- مهم لأندرويد 13+ -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
         android:label="Chess AR"
         android:name="${applicationName}"
-        android:icon="@android:drawable/sym_def_app_icon"> <!-- استخدمنا أيقونة النظام الافتراضية -->
+        android:icon="@android:drawable/sym_def_app_icon">
         
         <activity
             android:name=".MainActivity"
@@ -15,7 +16,6 @@
             android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
             android:hardwareAccelerated="true"
             android:windowSoftInputMode="adjustResize">
-            <!-- شلنا الثيمات الناقصة من هنا -->
             
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -23,7 +23,11 @@
             </intent-filter>
         </activity>
         
-        <service android:name="flutter_overlay_window.OverlayService" android:exported="false" />
+        <!-- تم تصحيح اسم السيرفس هنا -->
+        <service 
+            android:name="flutter.overlay.window.flutter_overlay_window.OverlayService" 
+            android:exported="false" />
+            
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
