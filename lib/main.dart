@@ -78,7 +78,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
             ),
-            const SizedBox(KSpacerSize: 20),
+            const SizedBox(height: 20),
             if (_cheatEngineActive) ...[
               const Text(
                 'الخيارات المتاحة:',
